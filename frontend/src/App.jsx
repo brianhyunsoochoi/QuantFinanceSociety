@@ -1,12 +1,28 @@
 import React, { useState } from "react";
 import axios from "axios";
+import ResultChart from "./Chart.jsx";
+import PriceChart from "./PriceChart.jsx";
 
 function App() {
-  const [numTickers, setNumTickers] = useState(2);
-  const [tickers, setTickers] = useState(["", ""]);
+  const [numTickers, setNumTickers] = useState(1);
+  const [tickers, setTickers] = useState([""]);
+  const [amounts, setAmounts] = useState([1000]);
   const [strategy, setStrategy] = useState("monthly");
-  const [amount, setAmount] = useState(10000);
   const [results, setResults] = useState([]);
+
+  const priceData = React.useMemo(() => {
+    if (results.length === 0) return [];
+    const length = results[0].prices.length;
+    const arr = [];
+    for (let i = 0; i < length; i++) {
+      const entry = { date: results[0].prices[i].date };
+      results.forEach((r) => {
+        entry[r.ticker] = r.prices[i]?.price;
+      });
+      arr.push(entry);
+    }
+    return arr;
+  }, [results]);
 
   const handleTickerChange = (index, value) => {
     const updated = [...tickers];
@@ -14,11 +30,19 @@ function App() {
     setTickers(updated);
   };
 
+  const handleAmountChange = (index, value) => {
+    const updated = [...amounts];
+    updated[index] = parseFloat(value) || 0;
+    setAmounts(updated);
+  };
+
   const simulate = async () => {
+    const validTickers = tickers.filter((t) => t);
+    const usedAmounts = amounts.slice(0, validTickers.length);
     const response = await axios.post("http://localhost:8000/simulate", {
-      tickers: tickers.filter((t) => t),
+      tickers: validTickers,
+      amounts: usedAmounts,
       strategy,
-      amount,
     });
     setResults(response.data.results);
   };
@@ -37,17 +61,25 @@ function App() {
           const count = parseInt(e.target.value);
           setNumTickers(count);
           setTickers((prev) => [...prev, ...Array(count - prev.length).fill("")]);
+          setAmounts((prev) => [...prev, ...Array(count - prev.length).fill(1000)]);
         }}
       />
 
       <br />
       {[...Array(numTickers)].map((_, i) => (
-        <input
-          key={i}
-          placeholder={`Ticker ${i + 1}`}
-          value={tickers[i] || ""}
-          onChange={(e) => handleTickerChange(i, e.target.value)}
-        />
+        <div key={i} style={{ marginBottom: 4 }}>
+          <input
+            placeholder={`Ticker ${i + 1}`}
+            value={tickers[i] || ""}
+            onChange={(e) => handleTickerChange(i, e.target.value)}
+          />
+          <input
+            type="number"
+            style={{ marginLeft: 4 }}
+            value={amounts[i]}
+            onChange={(e) => handleAmountChange(i, e.target.value)}
+          />
+        </div>
       ))}
 
       <br />
@@ -58,30 +90,30 @@ function App() {
       </select>
 
       <br />
-      <label>Investment Amount (USD):</label>
-      <input type="number" value={amount} onChange={(e) => setAmount(parseFloat(e.target.value))} />
-
-      <br />
       <button onClick={simulate}>Simulate</button>
 
       <hr />
       {results.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Final Value (USD)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((r) => (
-              <tr key={r.ticker}>
-                <td>{r.ticker}</td>
-                <td>{r.final_value ? `$${r.final_value}` : "Error"}</td>
+        <>
+          <table>
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Final Value (USD)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {results.map((r) => (
+                <tr key={r.ticker}>
+                  <td>{r.ticker}</td>
+                  <td>{r.final_value ? `$${r.final_value}` : "Error"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <ResultChart data={results} />
+          <PriceChart data={priceData} tickers={results.map((r) => r.ticker)} />
+        </>
       )}
     </div>
   );
