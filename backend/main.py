@@ -29,7 +29,10 @@ def simulate(data: SimulateRequest):
     for ticker, amount in zip(data.tickers, data.amounts):
         try:
             df = yf.download(ticker, start=start_date, end=end_date)
-            monthly = df["Close"].resample("ME").first()
+            # pandas uses 'M' for month end frequency. 'ME' is invalid and
+            # triggers an error, resulting in "Error" values in the response.
+            # Use the correct alias so resampling succeeds.
+            monthly = df["Close"].resample("M").first()
 
             if monthly.empty:
                 raise ValueError("no data")
