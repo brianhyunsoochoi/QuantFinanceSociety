@@ -1,6 +1,10 @@
-# Investment Strategy Simulator
+# Quant Finance Society
 
-This project provides a simple web application to compare dollar-cost averaging (DCA) and lump-sum investment strategies over the last five years.
+This project provides a collection of small tools to explore quantitative finance concepts.
+The main page allows choosing between the following mini projects:
+
+1. **Investment Strategy Simulator** – compare dollar-cost averaging (DCA) and lump-sum investment strategies over the last five years.
+2. **Stock Volatility Comparison** – visualise daily return distributions with simple boxplots.
 
 ## Structure
 
@@ -25,4 +29,5 @@ This project provides a simple web application to compare dollar-cost averaging 
    ```
 
 The frontend expects the backend at `http://localhost:8000`.
+Once both servers are running, open the frontend in your browser and choose a project from the main menu.
 

@@ -91,3 +91,30 @@ def simulate(data: SimulateRequest):
             })
 
     return {"results": results}
+class VolatilityRequest(BaseModel):
+    tickers: list[str]
+
+@app.post("/volatility")
+def volatility(data: VolatilityRequest):
+    end_date = datetime.today()
+    start_date = end_date - timedelta(days=5 * 365)
+    results = []
+    for ticker in data.tickers:
+        try:
+            df = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            if df.empty or "Close" not in df.columns:
+                raise ValueError("No data received")
+            df["returns"] = df["Close"].pct_change().dropna()
+            returns = df["returns"].dropna()
+            summary = {
+                "min": float(returns.min()),
+                "q1": float(returns.quantile(0.25)),
+                "median": float(returns.median()),
+                "q3": float(returns.quantile(0.75)),
+                "max": float(returns.max()),
+                "std": float(returns.std()),
+            }
+            results.append({"ticker": ticker, **summary})
+        except Exception as e:
+            results.append({"ticker": ticker, "error": str(e)})
+    return {"results": results}
