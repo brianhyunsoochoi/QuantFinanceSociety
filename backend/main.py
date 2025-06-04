@@ -1,8 +1,7 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import yfinance as yf
-import pandas as pd
 from datetime import datetime, timedelta
 
 app = FastAPI()
@@ -17,35 +16,49 @@ app.add_middleware(
 )
 
 class SimulateRequest(BaseModel):
-    tickers: list
+    tickers: list[str]
+    amounts: list[float]
     strategy: str  # "monthly" or "lump_sum"
-    amount: float
 
 @app.post("/simulate")
 def simulate(data: SimulateRequest):
     results = []
     end_date = datetime.today()
-    start_date = end_date - timedelta(days=5*365)
+    start_date = end_date - timedelta(days=5 * 365)
 
-    for ticker in data.tickers:
+    for ticker, amount in zip(data.tickers, data.amounts):
         try:
             df = yf.download(ticker, start=start_date, end=end_date)
             monthly = df["Close"].resample("ME").first()
 
+            if monthly.empty:
+                raise ValueError("no data")
+
             if data.strategy == "monthly":
-                monthly_investment = data.amount / len(monthly)
+                monthly_investment = amount / len(monthly)
                 shares = monthly_investment / monthly
                 total_shares = shares.sum()
             else:
                 first_price = monthly.iloc[0]
-                total_shares = data.amount / first_price
+                total_shares = amount / first_price
 
             final_price = monthly.iloc[-1]
             final_value = float(total_shares * final_price)
 
-            results.append({"ticker": ticker, "final_value": round(final_value, 2)})
+            price_data = [
+                {"date": d.strftime("%Y-%m"), "price": float(p)}
+                for d, p in monthly.items()
+            ]
 
-        except:
-            results.append({"ticker": ticker, "final_value": None})
+            results.append(
+                {
+                    "ticker": ticker,
+                    "final_value": round(final_value, 2),
+                    "prices": price_data,
+                }
+            )
+
+        except Exception:
+            results.append({"ticker": ticker, "final_value": None, "prices": []})
 
     return {"results": results}
