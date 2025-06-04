@@ -2,7 +2,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'r
 
 export default function PriceChart({ data, tickers }) {
   return (
-    <LineChart width={600} height={300} data={data}>
+    <LineChart width={1000} height={600} data={data}>
       <CartesianGrid strokeDasharray="3 3" />
       <XAxis dataKey="date" />
       <YAxis />
