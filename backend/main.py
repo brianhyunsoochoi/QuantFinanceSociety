@@ -5,6 +5,31 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 
+
+def moving_average_crossover(prices: pd.Series, cash: float,
+                              short: int = 3, long: int = 12) -> float:
+    """Simple moving average crossover strategy."""
+    short_ma = prices.rolling(window=short).mean()
+    long_ma = prices.rolling(window=long).mean()
+    position = 0
+    shares = 0.0
+    for date in prices.index:
+        s = short_ma.loc[date]
+        l = long_ma.loc[date]
+        if pd.isna(s) or pd.isna(l):
+            continue
+        price = prices.loc[date]
+        if s > l and position == 0:
+            shares = cash / price
+            cash = 0.0
+            position = 1
+        elif s < l and position == 1:
+            cash = shares * price
+            shares = 0.0
+            position = 0
+    final_price = prices.iloc[-1]
+    return cash + shares * final_price
+
 app = FastAPI()
 
 app.add_middleware(
@@ -18,7 +43,7 @@ app.add_middleware(
 class SimulateRequest(BaseModel):
     tickers: list[str]
     amounts: list[float]
-    strategy: str  # "monthly" or "lump_sum"
+    strategy: str  # "monthly", "lump_sum", "both", or "ma_crossover"
 
 @app.post("/simulate")
 def simulate(data: SimulateRequest):
@@ -54,32 +79,42 @@ def simulate(data: SimulateRequest):
 
             if data.strategy == "monthly":
                 monthly_investment = amount / len(monthly)
-                shares = monthly_investment / monthly
-                total_shares = shares.sum()
+                shares = (monthly_investment / monthly).sum()
+                final_value = float(shares * monthly.iloc[-1])
+            elif data.strategy == "lump_sum":
+                shares = amount / monthly.iloc[0]
+                final_value = float(shares * monthly.iloc[-1])
+            elif data.strategy == "both":
+                monthly_investment = amount / len(monthly)
+                shares_monthly = (monthly_investment / monthly).sum()
+                shares_lump = amount / monthly.iloc[0]
+                final_monthly = float(shares_monthly * monthly.iloc[-1])
+                final_lump = float(shares_lump * monthly.iloc[-1])
+            elif data.strategy == "ma_crossover":
+                final_value = float(moving_average_crossover(monthly, amount))
             else:
-                first_price = monthly.iloc[0]
-                total_shares = amount / first_price
-
-            final_price = monthly.iloc[-1]
-
-            product = total_shares * final_price
-            if hasattr(product, "item"):
-                final_value = product.item()
-            elif hasattr(product, "iloc"):
-                final_value = product.iloc[0]
-            else:
-                final_value = float(product)
+                raise ValueError("Invalid strategy")
 
             price_data = [
                 {"date": d.strftime("%Y-%m") if hasattr(d, "strftime") else str(d), "price": float(p)}
                 for d, p in monthly.items()
             ]
 
-            results.append({
-                "ticker": ticker,
-                "final_value": round(final_value, 2),
-                "prices": price_data,
-            })
+            if data.strategy == "both":
+                results.append({
+                    "ticker": ticker,
+                    "final_values": {
+                        "monthly": round(final_monthly, 2),
+                        "lump_sum": round(final_lump, 2),
+                    },
+                    "prices": price_data,
+                })
+            else:
+                results.append({
+                    "ticker": ticker,
+                    "final_value": round(final_value, 2),
+                    "prices": price_data,
+                })
 
         except Exception as e:
             print(f"❌ Error while processing {ticker}: {e}")
