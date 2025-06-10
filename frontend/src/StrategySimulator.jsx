@@ -111,6 +111,8 @@ function StrategySimulator({ onBack }) {
         >
           <option value="monthly">Invest Monthly</option>
           <option value="lump_sum">Lump Sum</option>
+          <option value="both">Monthly vs Lump Sum</option>
+          <option value="ma_crossover">Moving Average Crossover</option>
         </select>
 
         <button
@@ -131,22 +133,43 @@ function StrategySimulator({ onBack }) {
 
         {results.length > 0 && (
           <>
-            <table style={{ width: "100%", textAlign: "left", marginTop: "20px" }}>
-              <thead>
-                <tr>
-                  <th>Ticker</th>
-                  <th>Final Value (USD)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r) => (
-                  <tr key={r.ticker}>
-                    <td>{r.ticker}</td>
-                    <td>{r.final_value ? `$${r.final_value}` : "Error"}</td>
+            {strategy === "both" ? (
+              <table style={{ width: "100%", textAlign: "left", marginTop: "20px" }}>
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Monthly (USD)</th>
+                    <th>Lump Sum (USD)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {results.map((r) => (
+                    <tr key={r.ticker}>
+                      <td>{r.ticker}</td>
+                      <td>{r.final_values ? `$${r.final_values.monthly}` : "Error"}</td>
+                      <td>{r.final_values ? `$${r.final_values.lump_sum}` : "Error"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table style={{ width: "100%", textAlign: "left", marginTop: "20px" }}>
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Final Value (USD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((r) => (
+                    <tr key={r.ticker}>
+                      <td>{r.ticker}</td>
+                      <td>{r.final_value ? `$${r.final_value}` : "Error"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
 
             <ResultChart data={results} />
             <PriceChart data={priceData} tickers={results.map((r) => r.ticker)} />
