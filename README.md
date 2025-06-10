@@ -8,7 +8,7 @@ The main page allows choosing between the following mini projects:
 
 ## Structure
 
-- **backend/** – FastAPI service that fetches historical prices via `yfinance` and performs the simulation.
+- **backend/** – FastAPI service that fetches historical prices via `yfinance` and performs the simulation. The `BaseBackend` interface allows swapping the implementation (e.g. `YFinanceBackend`).
 - **frontend/** – React application built with Vite. It displays input forms and charts using Recharts.
 
 ## Running locally
