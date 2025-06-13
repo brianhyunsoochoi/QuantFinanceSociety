@@ -3,7 +3,7 @@
 This project provides a collection of small tools to explore quantitative finance concepts.
 The main page allows choosing between the following mini projects:
 
-1. **Investment Strategy Simulator** – evaluate dollar-cost averaging (DCA), lump-sum investment, a direct comparison of the two and a simple moving average crossover strategy over the last five years.
+1. **Investment Strategy Simulator** – evaluate dollar-cost averaging (DCA), lump-sum investment, a direct comparison of the two and a configurable moving average crossover strategy over the last five years. When comparing monthly vs lump sum the final values are shown in two separate charts.
 2. **Stock Volatility Comparison** – visualise daily return distributions with simple boxplots.
 
 ## Structure

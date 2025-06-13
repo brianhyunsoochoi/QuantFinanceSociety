@@ -11,6 +11,8 @@ class SimulateRequest(BaseModel):
     tickers: list[str]
     amounts: list[float]
     strategy: str  # "monthly", "lump_sum", "both", or "ma_crossover"
+    short_window: int | None = None
+    long_window: int | None = None
 
 
 class VolatilityRequest(BaseModel):
@@ -34,7 +36,12 @@ class YFinanceBackend(BaseBackend):
 
     @staticmethod
     def moving_average_crossover(prices: pd.Series, cash: float,
-                                 short: int = 3, long: int = 12) -> float:
+                                 short: int = 3, long: int = 12):
+        """Execute a simple moving average crossover strategy.
+
+        Returns final portfolio value along with the short and long
+        moving average series used for the strategy.
+        """
         short_ma = prices.rolling(window=short).mean()
         long_ma = prices.rolling(window=long).mean()
         position = 0
@@ -54,7 +61,8 @@ class YFinanceBackend(BaseBackend):
                 shares = 0.0
                 position = 0
         final_price = prices.iloc[-1]
-        return cash + shares * final_price
+        final_val = cash + shares * final_price
+        return final_val, short_ma, long_ma
 
     def simulate(self, data: SimulateRequest) -> dict:
         results = []
@@ -92,7 +100,19 @@ class YFinanceBackend(BaseBackend):
                     final_monthly = float(shares_monthly * monthly.iloc[-1])
                     final_lump = float(shares_lump * monthly.iloc[-1])
                 elif data.strategy == "ma_crossover":
-                    final_value = float(self.moving_average_crossover(monthly, amount))
+                    short = data.short_window or 20
+                    long = data.long_window or 60
+                    final_value, short_ma, long_ma = self.moving_average_crossover(
+                        monthly, amount, short=short, long=long
+                    )
+                    ma_data = [
+                        {
+                            "date": d.strftime("%Y-%m") if hasattr(d, "strftime") else str(d),
+                            "short": None if pd.isna(short_ma.loc[d]) else float(short_ma.loc[d]),
+                            "long": None if pd.isna(long_ma.loc[d]) else float(long_ma.loc[d]),
+                        }
+                        for d in monthly.index
+                    ]
                 else:
                     raise ValueError("Invalid strategy")
 
@@ -110,6 +130,13 @@ class YFinanceBackend(BaseBackend):
                             "lump_sum": round(final_lump, 2),
                         },
                         "prices": price_data,
+                    })
+                elif data.strategy == "ma_crossover":
+                    results.append({
+                        "ticker": ticker,
+                        "final_value": round(final_value, 2),
+                        "prices": price_data,
+                        "ma_data": ma_data,
                     })
                 else:
                     results.append({

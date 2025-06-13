@@ -8,6 +8,8 @@ function StrategySimulator({ onBack }) {
   const [tickers, setTickers] = useState(["AAPL"]);
   const [amounts, setAmounts] = useState([1000]);
   const [strategy, setStrategy] = useState("monthly");
+  const [shortWindow, setShortWindow] = useState(20);
+  const [longWindow, setLongWindow] = useState(60);
   const [results, setResults] = useState([]);
 
   const priceData = React.useMemo(() => {
@@ -18,6 +20,10 @@ function StrategySimulator({ onBack }) {
       const entry = { date: results[0].prices[i].date };
       results.forEach((r) => {
         entry[r.ticker] = r.prices[i]?.price;
+        if (r.ma_data) {
+          entry[`${r.ticker}_short`] = r.ma_data[i]?.short;
+          entry[`${r.ticker}_long`] = r.ma_data[i]?.long;
+        }
       });
       arr.push(entry);
     }
@@ -43,6 +49,8 @@ function StrategySimulator({ onBack }) {
       tickers: validTickers,
       amounts: usedAmounts,
       strategy,
+      short_window: shortWindow,
+      long_window: longWindow,
     });
     setResults(response.data.results);
   };
@@ -114,6 +122,32 @@ function StrategySimulator({ onBack }) {
           <option value="both">Monthly vs Lump Sum</option>
           <option value="ma_crossover">Moving Average Crossover</option>
         </select>
+
+        {strategy === "ma_crossover" && (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ flex: 1 }}>
+              <label>Short Window:</label>
+              <input
+                type="number"
+                value={shortWindow}
+                onChange={(e) => setShortWindow(parseInt(e.target.value))}
+                style={{ width: "100%", padding: "8px" }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label>Long Window:</label>
+              <select
+                value={longWindow}
+                onChange={(e) => setLongWindow(parseInt(e.target.value))}
+                style={{ width: "100%", padding: "8px" }}
+              >
+                <option value={60}>60</option>
+                <option value={80}>80</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={simulate}
