@@ -31,3 +31,19 @@ The main page allows choosing between the following mini projects:
 The frontend expects the backend at `http://localhost:8000`.
 Once both servers are running, open the frontend in your browser and choose a project from the main menu.
 
+
+## Moving Average ROI Script
+
+A small command-line utility `golden_cross_roi.py` calculates the return on investment when buying at golden crosses and selling at dead crosses. It downloads two years of daily prices with `yfinance` and supports three moving average combinations:
+
+- **10 & 50**
+- **20 & 60** (default)
+- **50 & 200**
+
+Run it with a ticker symbol and optional `--option` argument:
+
+```bash
+python golden_cross_roi.py AAPL --option 10_50
+```
+
+The script prints each trade's ROI, the average ROI and shows a chart with the moving averages and crossover points.
