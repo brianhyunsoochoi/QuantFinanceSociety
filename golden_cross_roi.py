@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+"""Moving average crossover ROI script (Python 3.9 compatible)."""
+
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt

@@ -15,7 +15,7 @@ The main page allows choosing between the following mini projects:
 
 1. Install Python dependencies:
    ```bash
-   pip install fastapi uvicorn yfinance
+   pip install fastapi uvicorn yfinance pandas matplotlib
    ```
 2. Start the backend:
    ```bash
@@ -40,7 +40,9 @@ A small command-line utility `golden_cross_roi.py` calculates the return on inve
 - **20 & 60** (default)
 - **50 & 200**
 
-Run it with a ticker symbol and optional `--option` argument:
+This script targets **Python 3.9** and requires `pandas`, `matplotlib` and
+`yfinance`.
+Run it with a ticker symbol and an optional `--option` argument:
 
 ```bash
 python golden_cross_roi.py AAPL --option 10_50
