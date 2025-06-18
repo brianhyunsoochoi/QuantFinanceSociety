@@ -7,16 +7,19 @@ import pandas as pd
 import yfinance as yf
 
 
+from typing import List, Optional
+
+
 class SimulateRequest(BaseModel):
-    tickers: list[str]
-    amounts: list[float]
+    tickers: List[str]
+    amounts: List[float]
     strategy: str  # "monthly", "lump_sum", "both", or "ma_crossover"
-    short_window: int | None = None
-    long_window: int | None = None
+    short_window: Optional[int] = None
+    long_window: Optional[int] = None
 
 
 class VolatilityRequest(BaseModel):
-    tickers: list[str]
+    tickers: List[str]
 
 
 class BaseBackend(ABC):
